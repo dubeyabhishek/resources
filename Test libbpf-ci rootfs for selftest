@@ -1,0 +1,24 @@
+Compile the kernel
+===================
+ARCH=powerpc make pseries_le_defconfig
+make menuconfig=> BTF NETFILTER_ADVANCED NF_CONNTRACK_MARK
+
+Download the rootfs from amazon link libbpf/ci
+==============================================
+wget ppc64le/libbpf-vmtest-rootfs-2023.12.12-bullseye-ppc64el.tar.zst https://libbpf-ci.s3.us-west-1.amazonaws.com/ppc64le/libbpf-vmtest-rootfs-2023.12.12-bullseye-ppc64el.tar.zst
+
+Make a rootfs.img file
+======================
+zstd -d libbpf-vmtest-rootfs-2023.12.12-bullseye-ppc64el.tar.zst
+touch rootfs.img
+chattr +C rootfs.img
+truncate -s 2G rootfs.img
+mkfs.ext2 -q rootfs.img
+mkdir mnt
+mount -o loop rootfs.img mnt
+tar xvf libbpf-vmtest-rootfs-2023.12.12-bullseye-ppc64el.tar -C mnt/
+umount mnt
+
+Run Qemu
+========
+qemu-system-ppc64 -nodefaults -display none -serial mon:stdio -m 4G -drive file="rootfs.img",format=raw,index=1,media=disk,if=scsi,cache=none -kernel "/home/Abhishek/linux/arch/powerpc/boot/zImage" -append "root=/dev/sda rw console=hvc0 single"
